@@ -122,6 +122,17 @@ class BOARD:
         return 0
 
     @staticmethod
+    def reset():
+        """ manual reset
+        :return: 0
+        """
+        GPIO.output(BOARD.RST, 0)
+        time.sleep(.01)
+        GPIO.output(BOARD.RST, 1)
+        time.sleep(.01)
+        return 0
+
+    @staticmethod
     def blink(time_sec, n_blink):
         if n_blink == 0:
             return
