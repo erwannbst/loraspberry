@@ -25,6 +25,9 @@ import time
 from SX127x.LoRa import *
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
 from SX127x.board_config import BOARD
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
 
 BOARD.setup()
 BOARD.reset()
@@ -96,6 +99,16 @@ class mylora(LoRa):
             self.set_mode(MODE.RXCONT) # Receiver mode
             time.sleep(10)
 
+    def send(self, data):
+        self.write_payload(data)
+        self.set_mode(MODE.TX)
+        while (self.var==0): # wait until send data
+            pass
+        self.var=0
+        self.reset_ptr_rx()
+        self.set_mode(MODE.RXCONT)
+        print("Data sent")
+
 lora = mylora(verbose=True)
 #args = parser.parse_args(lora) # configs in LoRaArgumentParser.py
 
@@ -112,12 +125,18 @@ lora.set_low_data_rate_optim(True)
 #  Medium Range  Defaults after init are 434.0MHz, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on 13 dBm
 #lora.set_pa_config(pa_select=1)
 
-
 assert(lora.get_agc_auto_on() == 1)
 
 try:
-    print("START")
-    lora.start()
+    @app.route("/send", methods=["POST"])
+    def send_endpoint():
+        try:
+            json_data = request.get_json()
+            # json_data is something like {"encoded_bytes": "94a3636174ce61ded0d019cd0190"}
+            print(f"Lora Service: Called with data: {json_data}")
+            lora.send(bytes.fromhex(json_data["encoded_bytes"]))
+            return jsonify({"status": "ok"})
+
 except KeyboardInterrupt:
     sys.stdout.flush()
     print("Exit")
