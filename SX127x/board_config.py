@@ -155,19 +155,22 @@ class SERVER_BOARD:
 class CLIENT_BOARD:
     """ Board initialisation/teardown and pin configuration is kept here.
         Also, information about the RF module is kept here.
-        This is the Raspberry Pi board with one LED and a modtronix inAir9B.
+        This is the Raspberry Pi board with one LED and a Ra-02 Lora.
     """
     # Note that the BCOM numbering for the GPIOs is used.
-    DIO0 = 22   # RaspPi GPIO 22
-    DIO1 = 23   # RaspPi GPIO 23
-    DIO2 = 24   # RaspPi GPIO 24
-    DIO3 = 25   # RaspPi GPIO 25
-    LED  = 18   # RaspPi GPIO 18 connects to the LED on the proto shield
-    SWITCH = 4  # RaspPi GPIO 4 connects to a switch connected to the board which was used to trigger TXs
+    DIO0 = 4   # RaspPi GPIO 4
+    DIO1 = 17   # RaspPi GPIO 17
+    DIO2 = 18   # RaspPi GPIO 18
+    DIO3 = 27   # RaspPi GPIO 27
+    RST  = 22   # RaspPi GPIO 22
+    LED  = 13   # RaspPi GPIO 13 connects to the LED and a resistor (1kohm or 330ohm)
+    #SWITCH = 4  # RaspPi GPIO 4 connects to a switch - not necessary
 
     # The spi object is kept here
     spi = None
-    
+    SPI_BUS=0
+    SPI_CS=0
+
     # tell pySX127x here whether the attached RF module uses low-band (RF*_LF pins) or high-band (RF*_HF pins).
     # low band (called band 1&2) are 137-175 and 410-525
     # high band (called band 3) is 862-1020
@@ -181,9 +184,11 @@ class CLIENT_BOARD:
         GPIO.setmode(GPIO.BCM)
         # LED
         GPIO.setup(CLIENT_BOARD.LED, GPIO.OUT)
+        GPIO.setup(CLIENT_BOARD.RST, GPIO.OUT)
         GPIO.output(CLIENT_BOARD.LED, 0)
+        GPIO.output(CLIENT_BOARD.RST, 1)
         # switch
-        GPIO.setup(CLIENT_BOARD.SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+        #GPIO.setup(CLIENT_BOARD.SWITCH, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         # DIOx
         for gpio_pin in [CLIENT_BOARD.DIO0, CLIENT_BOARD.DIO1, CLIENT_BOARD.DIO2, CLIENT_BOARD.DIO3]:
             GPIO.setup(gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -197,13 +202,15 @@ class CLIENT_BOARD:
         CLIENT_BOARD.spi.close()
 
     @staticmethod
-    def SpiDev(spi_bus=0, spi_cs=0):
+    def SpiDev():
         """ Init and return the SpiDev object
         :return: SpiDev object
         :param spi_bus: The RPi SPI bus to use: 0 or 1
         :param spi_cs: The RPi SPI chip select to use: 0 or 1
         :rtype: SpiDev
         """
+        spi_bus=CLIENT_BOARD.SPI_BUS
+        spi_cs=CLIENT_BOARD.SPI_CS
         CLIENT_BOARD.spi = spidev.SpiDev()
         CLIENT_BOARD.spi.open(spi_bus, spi_cs)
         CLIENT_BOARD.spi.max_speed_hz = 5000000    # SX127x can go up to 10MHz, pick half that to be safe
