@@ -102,10 +102,13 @@ class mylora(LoRa):
             time.sleep(10)
 
     def send(self, data):
-        self.write_payload(data)
-        self.set_mode(MODE.TX)
-        while (self.var==0): # wait until send data
-            pass
+        while (self.var==0):
+            print ("Sending data")
+            self.write_payload(data)
+            self.set_mode(MODE.TX)
+            time.sleep(3) # there must be a better solution but sleep() works
+            self.reset_ptr_rx()
+            self.set_mode(MODE.RXCONT) # Receiver mode
         self.var=0
         self.reset_ptr_rx()
         self.set_mode(MODE.RXCONT)
@@ -136,7 +139,9 @@ def send_endpoint():
         json_data = request.get_json()
         # json_data is something like {"encoded_bytes": "94a3636174ce61ded0d019cd0190"}
         print(f"Lora Service: Called with data: {json_data}")
-        lora.send(bytes.fromhex(json_data["encoded_bytes"]))
+        data = list(bytes.fromhex(json_data["encoded_bytes"]))
+        print(f"Lora Service: Sending data: {data}")
+        lora.send(data)
         return jsonify({"status": "ok"})
     except Exception as e:
         print(f"Lora Service: Error: {e}")
