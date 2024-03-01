@@ -21,7 +21,7 @@
 # You should have received a copy of the GNU General Public License along with pySX127.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from threading import Thread
+from threading import Thread, Event
 import sys
 import time
 from SX127x.LoRa import *
@@ -149,7 +149,7 @@ def send_endpoint():
 
 
 def run_flask_app():
-    app.run()
+    app.run(port=5004)
 
 if __name__ == "__main__":
     # Start the Flask app in a separate thread
