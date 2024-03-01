@@ -21,10 +21,12 @@
 # You should have received a copy of the GNU General Public License along with pySX127.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+from threading import Thread
+import sys
 import time
 from SX127x.LoRa import *
 #from SX127x.LoRaArgumentParser import LoRaArgumentParser
-from SX127x.board_config import BOARD
+from SX127x.board_config import SERVER_BOARD as BOARD
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
@@ -127,22 +129,37 @@ lora.set_low_data_rate_optim(True)
 
 assert(lora.get_agc_auto_on() == 1)
 
-try:
-    @app.route("/send", methods=["POST"])
-    def send_endpoint():
-        try:
-            json_data = request.get_json()
-            # json_data is something like {"encoded_bytes": "94a3636174ce61ded0d019cd0190"}
-            print(f"Lora Service: Called with data: {json_data}")
-            lora.send(bytes.fromhex(json_data["encoded_bytes"]))
-            return jsonify({"status": "ok"})
 
-except KeyboardInterrupt:
-    sys.stdout.flush()
-    print("Exit")
-    sys.stderr.write("KeyboardInterrupt\n")
-finally:
-    sys.stdout.flush()
-    print("Exit")
-    lora.set_mode(MODE.SLEEP)
-    BOARD.teardown()
+@app.route("/send", methods=["POST"])
+def send_endpoint():
+    try:
+        json_data = request.get_json()
+        # json_data is something like {"encoded_bytes": "94a3636174ce61ded0d019cd0190"}
+        print(f"Lora Service: Called with data: {json_data}")
+        lora.send(bytes.fromhex(json_data["encoded_bytes"]))
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        print(f"Lora Service: Error: {e}")
+        return jsonify({"status": "error", "message": str(e)})
+
+
+def run_flask_app():
+    app.run()
+
+if __name__ == "__main__":
+    # Start the Flask app in a separate thread
+    flask_thread = Thread(target=run_flask_app)
+    flask_thread.start()
+
+    try:
+        # Main thread waits for the Flask thread to finish
+        flask_thread.join()
+    except KeyboardInterrupt:
+        sys.stdout.flush()
+        print("Exit")
+        sys.stderr.write("KeyboardInterrupt\n")
+    finally:
+        sys.stdout.flush()
+        print("Exit")
+        lora.set_mode(MODE.SLEEP)
+        BOARD.teardown()
