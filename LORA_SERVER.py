@@ -102,7 +102,7 @@ class mylora(LoRa):
             time.sleep(10)
 
     def send(self, data):
-        while (self.var==0):
+        if (self.var==0):
             print ("Sending data")
             self.write_payload(data)
             self.set_mode(MODE.TX)

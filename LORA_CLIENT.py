@@ -42,11 +42,11 @@ class mylora(LoRa):
         #print("\nRxDone")
         self.clear_irq_flags(RxDone=1)
         payload = self.read_payload(nocheck=True )# Receive INF
-        print (f"Received: {payload}")
         hex_string=bytes(payload).hex()
-        #mens=mens[2:-1] #to discard \x00\x00 and \x00 at the end
         encoded_bytes = {"encoded_bytes": hex_string}
-        print(encoded_bytes)
+        print (f"Received: {encoded_bytes}")
+        # Call the decode microservice
+        requests.post("http://localhost:5002/decode", json=encoded_bytes)
         BOARD.led_off()
         
         time.sleep(2)
